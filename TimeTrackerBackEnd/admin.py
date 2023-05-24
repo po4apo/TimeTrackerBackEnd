@@ -8,11 +8,11 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(TaskModel)
 class TaskAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('pk', 'name', 'project')
 
 @admin.register(FrameModel)
 class FrameAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('pk', 'task', 'start', 'stop')
 
 
 
