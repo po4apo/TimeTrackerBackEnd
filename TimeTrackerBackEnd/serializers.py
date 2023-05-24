@@ -94,10 +94,10 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class FrameSerializer(serializers.ModelSerializer):
+    # todo: validate start and stop. Start must be less stop
     class Meta:
         model = FrameModel
         fields = '__all__'
-
 
 
 

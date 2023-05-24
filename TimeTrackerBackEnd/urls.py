@@ -34,5 +34,9 @@ urlpatterns = [
                   path('logout/', views.LogoutView.as_view()),
                   path('profile/', views.ProfileView.as_view()),
                   path('register/', views.UserRegistrationView.as_view()),
-                  path('start/', views.StartView.as_view({'post': 'start'})),
+                  path('start/', views.MangeTimeView.as_view({'post': 'start'})),
+                  path('stop/', views.MangeTimeView.as_view({'patch': 'stop'})),
+                  path('status/', views.MangeTimeView.as_view({'get': 'status'})),
+
+                  path('time_spent/<int:pk>/', views.StatisticView.as_view({'get': 'task_time_spent'})),
               ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

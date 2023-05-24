@@ -97,38 +97,75 @@ class TaskViewSet(viewsets.ModelViewSet):
             return Response(project_not_found_msg, status=status.HTTP_204_NO_CONTENT, headers=project_not_found_msg)
 
 
-class StartView(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    """
-    Start tracking time for current task.
-    This view create frame with start_at. It means that time tracker is started
-    """
+class MangeTimeView(mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     serializer_class = serializers.FrameSerializer
     permission_classes = (permissions.IsAuthenticated,)
     queryset = FrameModel.objects.all()
-    http_method_names = ['post']
+    http_method_names = ['get', 'post', 'patch']
 
-    def last_item(self):
-        return self.queryset.filter().first()
+    TASK_NOT_FOUND = string.Template('The project with pk=$pk does not exist')
+
+    def last_frame(self, user):
+        qs = self.queryset.filter(task__project__user=user)
+        return qs.last()
+
+    def status(self, request, *args, **kwargs):
+        instance = self.last_frame(request.user)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def start(self, request, *args, **kwargs):
-        last_item = self.last_item()
-        print(last_item)
-        if last_item.stop != None:
-            serializer = self.get_serializer(data=request.data)
+        """
+        Start tracking time for current task.
+        This view create frame with start_at. It means that time tracker is started.
+        There can be only one active project.
+        """
+
+        task = TaskModel.objects.get(pk=request.data['task'])
+        if task.project.user == request.user:
+            last_frame = self.last_frame(request.user)
+            if last_frame is None or last_frame.stop is not None:
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                headers = self.get_success_headers(serializer.data)
+                return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            else:
+                msg = {DETAIL: f'{last_frame.task.name} in {last_frame.task.project.name} already started'}
+                headers = self.get_authenticate_header(msg)
+                return Response(msg, status=status.HTTP_400_BAD_REQUEST, headers=headers)
+        headers = self.get_authenticate_header({DETAIL: 'task'})
+        return Response({DETAIL: 'task'}, status=status.HTTP_204_NO_CONTENT, headers=headers)
+
+    def stop(self, request, *args, **kwargs):
+        """
+        Stop tracking time for active project.
+        """
+        last_item = self.last_frame(request.user)
+
+        if last_item is not None and last_item.stop is None:
+            request.data['start'] = last_item.start
+            request.data['task'] = last_item.task.pk
+
+            serializer = self.get_serializer(last_item, data=request.data)
             serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            self.perform_update(serializer)
+            headers = self.get_authenticate_header(serializer.data)
+            return Response(serializer.data, status.HTTP_200_OK, headers=headers)
         else:
-            msg = {'detail': f'{last_item.task.name} in {last_item.task.project.name} already started'}
+            msg = {DETAIL: f'There is no running project'}
             headers = self.get_authenticate_header(msg)
-            return Response(msg, status=status.HTTP_400_BAD_REQUEST, headers=headers)
+            return Response(msg, status.HTTP_400_BAD_REQUEST, headers=headers)
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+class StatisticView(viewsets.GenericViewSet):
+    # Seems this class is not secure.
+    # In general, hiding the data of one user from another looks unreliable in the project
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = FrameModel.objects.all()
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def task_time_spent(self, request, *args, **kwargs):
+        queryset = FrameModel.objects.filter(task__project__user=request.user).filter(task=self.kwargs['pk'])
+        from django.db.models import Sum, F
+        time_spent = queryset.aggregate(time_spent=Sum(F("stop")-F('start')))
+        return Response(time_spent, status=status.HTTP_200_OK)
