@@ -61,6 +61,11 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = '__all__'
+
     def save(self):
         user = User(
             email=self.validated_data['email'],

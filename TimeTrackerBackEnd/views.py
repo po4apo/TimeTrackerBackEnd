@@ -1,7 +1,10 @@
 import string
 
 from django.contrib.auth import login, logout
+from django.template.context_processors import csrf
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.utils import swagger_auto_schema
+from pytz import unicode
 from rest_framework import permissions
 from rest_framework import views, generics
 from rest_framework import viewsets, mixins, status
@@ -39,7 +42,12 @@ class LoginView(views.APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         login(request, user)
-        return Response(None, status=status.HTTP_202_ACCEPTED)
+        response = {
+            'csrf': unicode(csrf(request)['csrf_token']),
+            'sessionid': request.session.session_key
+        }
+        print(response)
+        return Response(response, status=status.HTTP_202_ACCEPTED)
 
 
 class LogoutView(views.APIView):
@@ -163,9 +171,12 @@ class StatisticView(viewsets.GenericViewSet):
     # In general, hiding the data of one user from another looks unreliable in the project
     permission_classes = (permissions.IsAuthenticated,)
     queryset = FrameModel.objects.all()
+    serializer_class = serializers.FrameSerializer
 
+
+    @swagger_auto_schema(responses={200: "{time_spent: str}"})
     def task_time_spent(self, request, *args, **kwargs):
         queryset = FrameModel.objects.filter(task__project__user=request.user).filter(task=self.kwargs['pk'])
         from django.db.models import Sum, F
-        time_spent = queryset.aggregate(time_spent=Sum(F("stop")-F('start')))
+        time_spent = queryset.aggregate(time_spent=Sum(F("stop") - F('start')))
         return Response(time_spent, status=status.HTTP_200_OK)
