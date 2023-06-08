@@ -64,7 +64,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ["id", "last_login", "username", "first_name", "last_name", "email"]
 
     def save(self):
         user = User(
@@ -89,8 +89,8 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    # The default value of the project returns all projects, but should return only user projects or nothing.
-    project = serializers.PrimaryKeyRelatedField(queryset=ProjectModel.objects.filter(user=None))
+    # # The default value of the project returns all projects, but should return only user projects or nothing.
+    # project = serializers.PrimaryKeyRelatedField(queryset=ProjectModel.objects.filter(user=None))
     class Meta:
         model = TaskModel
         fields ='__all__'

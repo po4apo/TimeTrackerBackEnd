@@ -32,22 +32,6 @@ class UserRegistrationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginView(views.APIView):
-    # This view should be accessible also for unauthenticated users.
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request, format=None):
-        serializer = serializers.LoginSerializer(data=self.request.data,
-                                                 context={'request': self.request})
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        login(request, user)
-        response = {
-            'csrf': unicode(csrf(request)['csrf_token']),
-            'sessionid': request.session.session_key
-        }
-        print(response)
-        return Response(response, status=status.HTTP_202_ACCEPTED)
 
 
 class LogoutView(views.APIView):
@@ -71,7 +55,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = ProjectModel.objects.all()
     serializer_class = serializers.ProjectSerializer
-    http_method_names = ['get', 'post', 'patch']
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
@@ -83,17 +67,17 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.TaskSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project']
-    http_method_names = ['get', 'post', 'patch']
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     PROJECT_NOT_FOUND = string.Template('The project with pk=$pk does not exist')
 
     def create(self, request, *args, **kwargs):
-        project_pk = request.data['project']
+        project_pk = int(request.data['project'])
         project_not_found_msg = {DETAIL: self.PROJECT_NOT_FOUND.substitute(pk=project_pk)}
         try:
             project = ProjectModel.objects.get(pk=project_pk)
         except:
-            return Response(project_not_found_msg, status=status.HTTP_204_NO_CONTENT, headers=project_not_found_msg)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         if project.user == request.user:
             serializer = self.get_serializer(data=request.data)
 
@@ -158,8 +142,7 @@ class MangeTimeView(mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.G
             serializer = self.get_serializer(last_item, data=request.data)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
-            headers = self.get_authenticate_header(serializer.data)
-            return Response(serializer.data, status.HTTP_200_OK, headers=headers)
+            return Response(serializer.data, status.HTTP_200_OK)
         else:
             msg = {DETAIL: f'There is no running project'}
             headers = self.get_authenticate_header(msg)
