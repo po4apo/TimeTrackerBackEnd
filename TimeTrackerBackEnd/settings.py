@@ -1,3 +1,5 @@
+import os
+
 """
 Django settings for TimeTrackerBackEnd project.
 
@@ -15,20 +17,23 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Case when we don't use docker
+if os.getenv('DEBUG', None) is None:
+    from dotenv import load_dotenv
+
+    load_dotenv(BASE_DIR / '.env.dev')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%0q%i*#65w!--ji&you5sh$3tx@7o*mn-u90fqyfckra3c5xd2'
+SECRET_KEY = os.environ.get('SECRET_KEY') #
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', True)
 
 CORS_ORIGIN_ALLOW_ALL = True
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 CORS_ALLOW_HEADERS = ('content-disposition', 'accept-encoding',
                       'content-type', 'accept', 'origin', 'Authorization',
                       'access-control-allow-methods', 'sessionid')
@@ -42,11 +47,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     'corsheaders',
     'rest_framework',
     'TimeTrackerBackEnd',
     'django_filters',
-    'drf_yasg',
+    'drf_yasg',    
 ]
 
 REST_FRAMEWORK = {
@@ -95,8 +101,12 @@ WSGI_APPLICATION = 'TimeTrackerBackEnd.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': os.environ.get('SQL_ENGINE', "django.db.backends.sqlite3"),
+        'NAME': os.environ.get('SQL_DATABASE', BASE_DIR / 'db.sqlite3'),
+        'USER': os.environ.get('SQL_USER'),
+        'PASSWORD': os.environ.get('SQL_PASSWORD'),
+        'HOST': os.environ.get('SQL_HOST'),
+        'PORT': os.environ.get('SQL_PORT'),
     }
 }
 
@@ -133,10 +143,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = Path(BASE_DIR / "static")
-STATICFILES_DIRS = [
-    STATIC_ROOT / "front",
-]
+
+
 
 STATICFILES_FINDERS = (
 
