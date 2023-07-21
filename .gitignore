@@ -1,1 +1,11 @@
-.idea
+# Ignore compiled Python files
+*.pyc
+__pycache__/
+
+# Ignore the virtual environment
+venv/
+
+# Ignore the migrations
+migrations/
+
+# Ignore any other files or directories that should not be committed
