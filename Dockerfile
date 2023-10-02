@@ -3,16 +3,12 @@ LABEL authors="main"
 
 ENV PYTHONUNBUFFERED 1
 
-WORKDIR .
+COPY . /backend/
+WORKDIR /backend
 
-COPY . .
-
-RUN ls .
 
 
 RUN pip install -r requirements.txt
 
-EXPOSE 8080
-
-CMD python3 manage.py runserver 10.128.0.6:8000
+CMD python3 manage.py runserver
 # CMD ["%%CMD%%"]
