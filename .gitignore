@@ -1,2 +1,4 @@
 .idea
 TimeTrackerBackEnd/__pycache__
+db.sqlite3
+TimeTrackerBackEnd/migrations/
