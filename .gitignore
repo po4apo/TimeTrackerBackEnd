@@ -1,11 +1,8 @@
-# Ignore compiled Python files
 *.pyc
-__pycache__/
+TimeTrackerBackEnd/__pycache__
 
-# Ignore the virtual environment
 venv/
 
-# Ignore the migrations
-migrations/
+TimeTrackerBackEnd/migrations/
+db.sqlite3
 
-# Ignore any other files or directories that should not be committed
