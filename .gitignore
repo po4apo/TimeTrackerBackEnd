@@ -1,3 +1,6 @@
+.idea
+.vscode
+
 *.pyc
 TimeTrackerBackEnd/__pycache__
 

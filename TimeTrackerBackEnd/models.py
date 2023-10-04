@@ -7,7 +7,7 @@ class ProjectModel(models.Model):
     name = models.CharField(max_length=20)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 
 class TaskModel(models.Model):
@@ -26,7 +26,7 @@ class TaskModel(models.Model):
                               default='Active', )
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 
 class FrameModel(models.Model):
