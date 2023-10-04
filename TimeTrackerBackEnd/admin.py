@@ -13,6 +13,3 @@ class TaskAdmin(admin.ModelAdmin):
 @admin.register(FrameModel)
 class FrameAdmin(admin.ModelAdmin):
     list_display = ('pk', 'task', 'start', 'stop')
-
-
-

@@ -1,4 +1,11 @@
 .idea
+.vscode
+
+*.pyc
 TimeTrackerBackEnd/__pycache__
-db.sqlite3
+
+venv/
+
 TimeTrackerBackEnd/migrations/
+db.sqlite3
+

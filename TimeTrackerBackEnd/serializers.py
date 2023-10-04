@@ -89,7 +89,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    # # The default value of the project returns all projects, but should return only user projects or nothing.
+    ## The default value of the project returns all projects, but should return only user projects or nothing.
     # project = serializers.PrimaryKeyRelatedField(queryset=ProjectModel.objects.filter(user=None))
     class Meta:
         model = TaskModel
