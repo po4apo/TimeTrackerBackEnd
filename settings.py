@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if os.getenv('DEBUG', None) is None:
     from dotenv import load_dotenv
 
-    load_dotenv('.env.dev')
+    load_dotenv('.env.local_dev')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
