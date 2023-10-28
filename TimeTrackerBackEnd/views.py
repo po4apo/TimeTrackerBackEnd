@@ -1,11 +1,10 @@
 import string
 
-from django.contrib.auth import login, logout
-from django.template.context_processors import csrf
+from django.contrib.auth import logout
+from django.db.models import Sum, F
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
-from pytz import unicode
-from rest_framework import permissions
+from rest_framework import permissions, exceptions
 from rest_framework import views, generics
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
@@ -30,8 +29,6 @@ class UserRegistrationView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
 class LogoutView(views.APIView):
@@ -62,31 +59,27 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated, custom_permissions.TaskPermissions)
+    permission_classes = (permissions.IsAuthenticated,
+                          custom_permissions.TaskPermissions)
     queryset = TaskModel.objects.all()
     serializer_class = serializers.TaskSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project']
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-    PROJECT_NOT_FOUND = string.Template('The project with pk=$pk does not exist')
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(project__user=self.request.user)
 
-    def create(self, request, *args, **kwargs):
-        project_pk = int(request.data['project'])
-        project_not_found_msg = {DETAIL: self.PROJECT_NOT_FOUND.substitute(pk=project_pk)}
-        try:
-            project = ProjectModel.objects.get(pk=project_pk)
-        except:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        if project.user == request.user:
-            serializer = self.get_serializer(data=request.data)
-
-            serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        else:
-            return Response(project_not_found_msg, status=status.HTTP_204_NO_CONTENT, headers=project_not_found_msg)
+    def perform_create(self, serializer):
+        # return super().perform_create(serializer)
+        got_project_id = self.request.data['project']
+        user_projects = [project.pk for project in
+                         ProjectModel.objects.filter(user=self.request.user)]
+        if got_project_id not in user_projects:
+            raise exceptions.ValidationError(
+                {"project": [f"Invalid pk \"{got_project_id}\" - object does not exist."]})
+        return super().perform_create(serializer)
 
 
 class MangeTimeView(mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
@@ -123,7 +116,8 @@ class MangeTimeView(mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.G
                 headers = self.get_success_headers(serializer.data)
                 return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
             else:
-                msg = {DETAIL: f'{last_frame.task.name} in {last_frame.task.project.name} already started'}
+                msg = {
+                    DETAIL: f'{last_frame.task.name} in {last_frame.task.project.name} already started'}
                 headers = self.get_authenticate_header(msg)
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST, headers=headers)
         headers = self.get_authenticate_header({DETAIL: 'task'})
@@ -156,10 +150,9 @@ class StatisticView(viewsets.GenericViewSet):
     queryset = FrameModel.objects.all()
     serializer_class = serializers.FrameSerializer
 
-
     @swagger_auto_schema(responses={200: "{time_spent: str}"})
     def task_time_spent(self, request, *args, **kwargs):
-        queryset = FrameModel.objects.filter(task__project__user=request.user).filter(task=self.kwargs['pk'])
-        from django.db.models import Sum, F
+        queryset = FrameModel.objects.filter(
+            task__project__user=request.user).filter(task=self.kwargs['pk'])
         time_spent = queryset.aggregate(time_spent=Sum(F("stop") - F('start')))
         return Response(time_spent, status=status.HTTP_200_OK)
