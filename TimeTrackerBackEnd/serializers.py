@@ -4,12 +4,15 @@ from django.contrib.auth.models import User
 
 from .models import ProjectModel, TaskModel, FrameModel
 
+
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    password2 = serializers.CharField(
+        style={'input_type': 'password'}, write_only=True)
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'password', 'password2']
+        fields = ['username', 'first_name', 'last_name',
+                  'email', 'password', 'password2']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -23,7 +26,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         password2 = self.validated_data['password2']
 
         if password != password2:
-            raise serializers.ValidationError({'password': 'Passwords do not match.'})
+            raise serializers.ValidationError(
+                {'password': 'Passwords do not match.'})
 
         user.set_password(password)
         user.save()
@@ -64,7 +68,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "last_login", "username", "first_name", "last_name", "email"]
+        fields = ["id", "last_login", "username",
+                  "first_name", "last_name", "email"]
 
     def save(self):
         user = User(
@@ -75,7 +80,8 @@ class UserSerializer(serializers.ModelSerializer):
         password2 = self.validated_data['password2']
 
         if password != password2:
-            raise serializers.ValidationError({'password': 'Passwords do not match.'})
+            raise serializers.ValidationError(
+                {'password': 'Passwords do not match.'})
 
         user.set_password(password)
         user.save()
@@ -89,13 +95,11 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    ## The default value of the project returns all projects, but should return only user projects or nothing.
+    # The default value of the project returns all projects, but should return only user projects or nothing.
     # project = serializers.PrimaryKeyRelatedField(queryset=ProjectModel.objects.filter(user=None))
     class Meta:
         model = TaskModel
-        fields ='__all__'
-
-
+        fields = '__all__'
 
 
 class FrameSerializer(serializers.ModelSerializer):
@@ -103,12 +107,3 @@ class FrameSerializer(serializers.ModelSerializer):
     class Meta:
         model = FrameModel
         fields = '__all__'
-
-
-
-
-
-
-
-
-
